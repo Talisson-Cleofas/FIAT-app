@@ -1,8 +1,22 @@
+# Dependências
 node_modules/
+
+# Builds e Saídas
 build/
 dist/
 coverage/
+
+# Sistema Operacional e Logs
 .DS_Store
 *.log
-.env*
-!.env
+
+# SEGURANÇA: Ignore todos os arquivos de ambiente e chaves
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Se você quiser subir um modelo sem a sua chave real, 
+# você pode criar um arquivo chamado .env.example (sem a chave)
+# e esse arquivo SIM pode ser enviado.
