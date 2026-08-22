@@ -10,7 +10,7 @@ import AdminPanel from './components/AdminPanel';
 import { supabase } from './lib/supabase';
 import { Category, Content, User } from './types';
 import { offlineService, OfflineContent } from './services/offlineService';
-import { getProfile, listCategories, listContent, listUserContent, saveHistory, toggleFavorite } from './services/supabaseService';
+import { fallbackCategories, getProfile, listCategories, listContent, listUserContent, saveHistory, toggleFavorite } from './services/supabaseService';
 
 const verse = {
   verse: 'Eis aqui a serva do Senhor; faça-se em mim segundo a tua palavra.',
@@ -118,6 +118,7 @@ export default function App() {
   }, [content, searchQuery]);
 
   const heroContent = filteredContent[0] || null;
+  const catalogCategories = categories.length > 0 ? categories : fallbackCategories;
 
   if (!authReady) return <div className="min-h-screen grid place-items-center text-fiat-gold">Carregando FIAT...</div>;
 
@@ -132,9 +133,9 @@ export default function App() {
         <div className={`relative z-20 pb-20 ${currentView === 'home' && heroContent ? '-mt-16 sm:-mt-32' : 'pt-28'}`}>
           {currentView === 'home' && <>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12"><motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-fiat-blue/40 backdrop-blur-xl border border-fiat-gold/30 rounded-2xl p-6 sm:p-10 flex flex-col md:flex-row items-center gap-8 shadow-2xl"><div className="w-20 h-20 bg-fiat-gold/10 rounded-full grid place-items-center border border-fiat-gold/30"><span className="text-fiat-gold font-serif font-bold text-4xl">†</span></div><div className="flex-1 text-center md:text-left"><p className="text-fiat-gold text-xs font-bold uppercase tracking-[0.3em] mb-2">Versículo do Dia</p><h3 className="text-xl sm:text-2xl font-serif italic mb-2">“{verse.verse}”</h3><p className="text-fiat-gold font-bold text-sm mb-4">— {verse.reference}</p><p className="text-gray-300">{verse.reflection}</p></div></motion.div></div>
-            {searchQuery ? row(`Resultados para “${searchQuery}”`, filteredContent) : <>{history.length > 0 && row('Continuar assistindo', history)}{categories.map(category => <div key={category.id}>{row(category.name, content.filter(item => item.category_id === category.id), categoryDescriptions[category.id])}</div>)}</>}
+            {searchQuery ? row(`Resultados para “${searchQuery}”`, filteredContent) : <>{history.length > 0 && row('Continuar assistindo', history)}{catalogCategories.map(category => <div key={category.id}>{row(category.name, content.filter(item => item.category_id === category.id), categoryDescriptions[category.id])}</div>)}</>}
           </>}
-          {currentView === 'explore' && categories.map(category => <div key={category.id}>{row(category.name, content.filter(item => item.category_id === category.id), categoryDescriptions[category.id])}</div>)}
+          {currentView === 'explore' && catalogCategories.map(category => <div key={category.id}>{row(category.name, content.filter(item => item.category_id === category.id), categoryDescriptions[category.id])}</div>)}
           {currentView === 'mylist' && row('Continuar assistindo', history)}
           {currentView === 'favorites' && row('Meus favoritos', favorites)}
           {currentView === 'offline' && row('Conteúdo offline', downloads)}
