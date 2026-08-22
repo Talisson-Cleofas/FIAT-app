@@ -18,6 +18,15 @@ const verse = {
   reflection: 'O fiat de Maria nos ensina a responder a Deus com confiança, liberdade e disponibilidade.'
 };
 
+const categoryDescriptions: Record<string, string> = {
+  'biblia-cnbb': 'A Palavra de Deus na tradução oficial da CNBB, organizada para leitura e oração diária.',
+  'a-jornada': 'Bíblia em um ano: um episódio por dia para percorrer toda a história da salvação.',
+  'eclesia': 'Leitura guiada do Catecismo da Igreja Católica para conhecer e aprofundar a fé.',
+  'hesed': 'Um ano com o Diário de Santa Faustina e a espiritualidade da Divina Misericórdia.',
+  'young': 'Devocionais, salmos e reflexões diárias em uma linguagem jovem e direta.',
+  'podcast': 'Conversas, testemunhos e formação para acompanhar onde você estiver.'
+};
+
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
@@ -112,21 +121,20 @@ export default function App() {
 
   if (!authReady) return <div className="min-h-screen grid place-items-center text-fiat-gold">Carregando FIAT...</div>;
 
-  const row = (title: string, items: Content[]) => <ContentRow title={title} items={items} onPlay={setActiveContent} favorites={favorites} onToggleFavorite={handleToggleFavorite} downloads={downloads} />;
+  const row = (title: string, items: Content[], emptyDescription?: string) => <ContentRow title={title} items={items} onPlay={setActiveContent} favorites={favorites} onToggleFavorite={handleToggleFavorite} downloads={downloads} emptyDescription={emptyDescription} />;
 
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar user={user} onLogout={() => { supabase.auth.signOut(); }} onOpenAuth={() => setShowAuth(true)} onOpenAdmin={() => setShowAdmin(true)} onSearch={setSearchQuery} currentView={currentView} onViewChange={setCurrentView} onSubscribe={() => alert('Os planos serão conectados na próxima etapa.')} />
       <main className="flex-1">
         {error && <div className="pt-24 px-4 max-w-7xl mx-auto text-red-300">{error}</div>}
-        {currentView === 'home' && <Hero content={heroContent} onPlay={setActiveContent} favorites={favorites} onToggleFavorite={handleToggleFavorite} />}
+        {currentView === 'home' && <Hero content={heroContent} onPlay={setActiveContent} favorites={favorites} onToggleFavorite={handleToggleFavorite} onExplore={() => setCurrentView('explore')} />}
         <div className={`relative z-20 pb-20 ${currentView === 'home' && heroContent ? '-mt-16 sm:-mt-32' : 'pt-28'}`}>
           {currentView === 'home' && <>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-12"><motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-fiat-blue/40 backdrop-blur-xl border border-fiat-gold/30 rounded-2xl p-6 sm:p-10 flex flex-col md:flex-row items-center gap-8 shadow-2xl"><div className="w-20 h-20 bg-fiat-gold/10 rounded-full grid place-items-center border border-fiat-gold/30"><span className="text-fiat-gold font-serif font-bold text-4xl">†</span></div><div className="flex-1 text-center md:text-left"><p className="text-fiat-gold text-xs font-bold uppercase tracking-[0.3em] mb-2">Versículo do Dia</p><h3 className="text-xl sm:text-2xl font-serif italic mb-2">“{verse.verse}”</h3><p className="text-fiat-gold font-bold text-sm mb-4">— {verse.reference}</p><p className="text-gray-300">{verse.reflection}</p></div></motion.div></div>
-            {searchQuery ? row(`Resultados para “${searchQuery}”`, filteredContent) : <>{history.length > 0 && row('Continuar assistindo', history)}{categories.map(category => <div key={category.id}>{row(category.name, content.filter(item => item.category_id === category.id))}</div>)}</>}
-            {!error && content.length === 0 && <div className="max-w-3xl mx-auto px-4 py-12 text-center"><div className="bg-fiat-card border border-white/10 rounded-2xl p-8 sm:p-12"><span className="text-5xl text-fiat-gold">†</span><h2 className="text-2xl sm:text-3xl font-serif font-bold mt-4">A biblioteca FIAT está sendo preparada</h2><p className="text-gray-400 mt-3">{user?.role === 'admin' ? 'Publique o primeiro conteúdo de formação, oração, vídeo ou áudio.' : 'Entre com uma conta administrativa para publicar o primeiro conteúdo.'}</p><button onClick={() => user?.role === 'admin' ? setShowAdmin(true) : setShowAuth(true)} className="mt-6 bg-fiat-blue border border-fiat-gold/30 px-6 py-3 rounded-xl font-bold">{user?.role === 'admin' ? 'Abrir painel administrativo' : 'Entrar ou criar conta'}</button></div></div>}
+            {searchQuery ? row(`Resultados para “${searchQuery}”`, filteredContent) : <>{history.length > 0 && row('Continuar assistindo', history)}{categories.map(category => <div key={category.id}>{row(category.name, content.filter(item => item.category_id === category.id), categoryDescriptions[category.id])}</div>)}</>}
           </>}
-          {currentView === 'explore' && categories.map(category => <div key={category.id}>{row(category.name, content.filter(item => item.category_id === category.id))}</div>)}
+          {currentView === 'explore' && categories.map(category => <div key={category.id}>{row(category.name, content.filter(item => item.category_id === category.id), categoryDescriptions[category.id])}</div>)}
           {currentView === 'mylist' && row('Continuar assistindo', history)}
           {currentView === 'favorites' && row('Meus favoritos', favorites)}
           {currentView === 'offline' && row('Conteúdo offline', downloads)}
