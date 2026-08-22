@@ -44,9 +44,11 @@ export default function Navbar({ user, onLogout, onOpenAuth, onOpenAdmin, onSear
               className="flex-shrink-0 flex items-center gap-1.5 sm:gap-2 cursor-pointer group" 
               onClick={() => window.location.href = '/'}
             >
-              <div className="w-7 h-7 sm:w-8 sm:h-8 lg:w-9 lg:h-9 bg-fiat-blue rounded-full flex items-center justify-center border border-fiat-gold transition-transform group-hover:scale-110">
-                <span className="text-fiat-gold font-serif font-bold text-lg sm:text-xl lg:text-2xl">F</span>
-              </div>
+              <img
+                src="/fiat-mark.png"
+                alt="Símbolo FIAT"
+                className="w-9 h-9 sm:w-11 sm:h-11 lg:w-12 lg:h-12 object-contain transition-transform duration-300 group-hover:scale-110"
+              />
               <span className="text-xl sm:text-2xl lg:text-3xl font-serif font-bold tracking-tighter gold-text">FIAT</span>
             </motion.div>
             
