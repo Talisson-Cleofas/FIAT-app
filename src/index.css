@@ -1,6 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
 @import "tailwindcss";
 
+@layer components {
+  .admin-nav { @apply w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 hover:bg-white/5 transition-colors; }
+  .admin-nav svg { @apply w-5 h-5; }
+  .admin-input { @apply mt-1 w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-fiat-gold; }
+}
+
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-serif: "Playfair Display", serif;

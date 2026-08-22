@@ -1,30 +1,31 @@
 export interface User {
-  id: number;
+  id: string;
   name: string;
   email: string;
   role: 'user' | 'admin';
 }
 
 export interface Category {
-  id: number;
+  id: string;
   name: string;
   slug: string;
 }
 
 export interface Content {
-  id: number;
+  id: string;
   title: string;
   description: string;
-  category_id: number;
+  category_id: string;
   category_name?: string;
   thumbnail: string;
   video_url?: string;
   audio_url?: string;
-  is_active: number;
+  is_active: boolean;
   published_at: string;
   progress?: number;
   views?: number;
   tags?: string;
+  media_type?: 'video' | 'audio';
 }
 
 export interface AuthResponse {

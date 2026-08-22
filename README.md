@@ -1,66 +1,54 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# FIAT — Plataforma Católica Digital
 
-# Run and deploy your AI Studio app
+Aplicação React/Vite com autenticação de membros, PostgreSQL e painel administrativo no Supabase, protegidos por Row Level Security (RLS).
 
-This contains everything you need to run your app locally.
+## Arquitetura de mídia
 
-View your app in AI Studio: https://ai.studio/apps/9e05c881-8db1-48fa-8ce3-3aa22a837494
+Áudios e vídeos **não são incluídos no build do site**. O painel salva apenas URLs:
 
-## Run Locally
+- Vídeos: YouTube não listado (mais simples), Vimeo ou Cloudflare Stream.
+- Áudios: Supabase Storage, Cloudinary ou Cloudflare R2.
+- Capas: Supabase Storage, Cloudinary ou outro CDN.
 
-**Prerequisites:** Node.js
+Isso mantém o deploy pequeno e transfere o streaming para um serviço próprio para mídia.
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## Configuração do Supabase
 
-# ✝️ FIAT – Plataforma Católica Digital
+1. Crie um projeto em <https://supabase.com/dashboard>.
+2. Abra **SQL Editor**, cole o conteúdo de `supabase/schema.sql` e execute.
+3. Em **Authentication > Providers**, mantenha **Email** habilitado.
+4. Em **Project Settings > API**, copie a Project URL e a chave pública `anon`.
+5. Copie `.env.example` para `.env.local` e preencha `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`.
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Status-Em%20Desenvolvimento-blue?style=for-the-badge" alt="Status">
-  <img src="https://img.shields.io/badge/Stack-React%20%7C%20Node%20%7C%20Gemini-gold?style=for-the-badge" alt="Stack">
-</p>
+## Primeiro administrador
 
-> **"Fiat mihi secundum verbum tuum"** – Onde a tecnologia encontra a espiritualidade em uma experiência premium de streaming.
+1. Cadastre normalmente a conta que será administradora pelo aplicativo.
+2. No SQL Editor, execute `update public.profiles set role = 'admin' where email = 'seu@email.com';`.
+3. Troque pelo e-mail real da conta.
+4. Saia e entre novamente no aplicativo.
 
-## 📱 Sobre o Projeto
+Depois disso, o próprio administrador pode promover ou rebaixar outras contas no painel.
 
-O **FIAT** é um ecossistema digital inspirado na interface moderna da Netflix, desenhado especificamente para o público católico. O objetivo é centralizar conteúdos de formação, oração e entretenimento cristão com uma experiência imersiva e elegante.
+## Desenvolvimento
 
-### 🌟 Diferenciais
+```bash
+npm install
+npm run dev
+```
 
-- **Design Premium:** Paleta em Azul Marinho, Vermelho Catedral e Detalhes em Dourado.
-- **IA Integrada:** Utiliza o modelo **Google Gemini** para auxílio em meditações e organização de conteúdos.
-- **Multi-formato:** Suporte nativo para Vídeo (Séries e Cursos) e Áudio (Podcasts e Meditações).
+Validação:
 
----
+```bash
+npm run lint
+npm run build
+```
 
-## 📚 Categorias Principais
+## Publicação
 
-- **🎧 FIAT A Jornada:** Bíblia em áudio e vídeo (Plano de 1 ano).
-- **📖 FIAT Eclésia:** Estudo profundo do Catecismo.
-- **🔥 FIAT Hesed:** Diário da Misericórdia de Santa Faustina.
-- **🙏 FIAT Young:** Conteúdo devocional focado na juventude.
+Na Vercel, configure as variáveis `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`, comando `npm run build` e saída `dist`.
 
----
+## Segurança
 
-## 🛠️ Stack Tecnológica
-
-- **Frontend:** React.js / Next.js
-- **Backend:** Node.js (TypeScript)
-- **Inteligência Artificial:** Google Gemini AI SDK
-- **Estilização:** Tailwind CSS & Framer Motion (Animações)
-- **Banco de Dados:** PostgreSQL / MongoDB
-
----
-
-## 🚀 Como Rodar o Projeto Localmente
-
-1. **Clone o repositório:**
-   ```bash
-   git clone [https://github.com/SEU_USUARIO/fiat-app.git](https://github.com/SEU_USUARIO/fiat-app.git)
-   ```
+- Não envie `.env.local` ao Git.
+- A chave `anon` é pública por definição; a proteção real está nas regras RLS de `supabase/schema.sql`.
+- Nunca coloque a chave `service_role` no frontend.

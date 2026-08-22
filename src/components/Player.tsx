@@ -28,6 +28,16 @@ export default function Player({ content, onClose, onProgress }: PlayerProps) {
 
   // Use a sample video if no URL is provided for online content
   const onlineVideoUrl = content.video_url || 'https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4';
+  const youtubeId = (() => {
+    if (!content.video_url) return null;
+    try {
+      const url = new URL(content.video_url);
+      if (url.hostname.includes('youtu.be')) return url.pathname.slice(1);
+      if (url.hostname.includes('youtube.com')) return url.searchParams.get('v') || url.pathname.split('/').filter(Boolean).pop() || null;
+    } catch { return null; }
+    return null;
+  })();
+  const isAudio = content.media_type === 'audio' || (!content.video_url && !!content.audio_url);
 
   useEffect(() => {
     checkIfDownloaded();
@@ -239,6 +249,16 @@ export default function Player({ content, onClose, onProgress }: PlayerProps) {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isPlaying, isMuted, volume, isFullscreen]);
+
+  if (youtubeId || isAudio) return (
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-fiat-bg overflow-y-auto">
+      <button onClick={onClose} className="fixed top-5 right-5 z-10 w-11 h-11 rounded-full bg-black/70 grid place-items-center"><X /></button>
+      <div className="w-full aspect-video bg-black flex items-center justify-center">
+        {youtubeId ? <iframe src={`https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=1&rel=0`} title={content.title} className="w-full h-full" allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen /> : <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-fiat-blue to-black p-8"><img src={content.thumbnail} alt="" className="w-44 h-44 sm:w-72 sm:h-72 rounded-2xl object-cover shadow-2xl mb-8" /><audio src={content.audio_url} controls autoPlay className="w-full max-w-2xl" /></div>}
+      </div>
+      <div className="max-w-5xl mx-auto p-6 sm:p-10"><p className="text-fiat-gold text-sm font-bold uppercase tracking-widest">{content.category_name}</p><h2 className="text-3xl sm:text-5xl font-serif font-bold mt-2">{content.title}</h2><p className="text-gray-300 mt-5 leading-relaxed">{content.description}</p></div>
+    </motion.div>
+  );
 
   return (
     <motion.div 
