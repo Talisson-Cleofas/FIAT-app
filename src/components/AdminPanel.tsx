@@ -43,7 +43,7 @@ export default function AdminPanel({ onClose }: Props) {
   };
 
   return <div className="fixed inset-0 z-[120] bg-fiat-bg flex flex-col">
-    <header className="h-16 border-b border-white/10 flex items-center justify-between px-6 bg-fiat-card"><h1 className="text-xl font-serif font-bold gold-text">Painel Administrativo</h1><button onClick={onClose}><X /></button></header>
+    <header className="h-16 border-b border-white/10 flex items-center justify-between px-6 bg-fiat-card"><div className="flex items-center gap-3"><img src="/fiat-mark.png" alt="Símbolo FIAT" className="h-11 w-11 object-contain" /><h1 className="text-xl font-serif font-bold gold-text">Painel Administrativo</h1></div><button onClick={onClose}><X /></button></header>
     <div className="flex flex-1 overflow-hidden">
       <aside className="w-64 border-r border-white/10 bg-fiat-card hidden md:block p-4 space-y-2">
         <button onClick={() => setTab('dashboard')} className={`admin-nav ${tab === 'dashboard' ? 'bg-fiat-blue text-white' : ''}`}><LayoutDashboard /> Dashboard</button>
