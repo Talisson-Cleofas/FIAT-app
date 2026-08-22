@@ -51,6 +51,7 @@ create table public.history (
 );
 
 insert into public.categories (id, name, slug) values
+  ('biblia-cnbb', 'Bíblia CNBB', 'biblia-cnbb'),
   ('a-jornada', 'FIAT A Jornada', 'a-jornada'),
   ('eclesia', 'FIAT Eclésia', 'eclesia'),
   ('hesed', 'FIAT Hesed', 'hesed'),
