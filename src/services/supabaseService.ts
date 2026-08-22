@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase';
 import { Category, Content, User } from '../types';
 
 export const fallbackCategories: Category[] = [
+  { id: 'biblia-cnbb', name: 'Bíblia CNBB', slug: 'biblia-cnbb' },
   { id: 'a-jornada', name: 'FIAT A Jornada', slug: 'a-jornada' },
   { id: 'eclesia', name: 'FIAT Eclésia', slug: 'eclesia' },
   { id: 'hesed', name: 'FIAT Hesed', slug: 'hesed' },
@@ -29,7 +30,10 @@ export async function createProfile(uid: string, name: string, email: string) {
 
 export async function listCategories(): Promise<Category[]> {
   const { data, error } = await supabase.from('categories').select('*').order('name');
-  fail(error); return data?.length ? data as Category[] : fallbackCategories;
+  fail(error);
+  const categories = new Map(fallbackCategories.map(category => [category.id, category]));
+  (data || []).forEach(category => categories.set(category.id, category as Category));
+  return fallbackCategories.map(category => categories.get(category.id)!).filter(Boolean);
 }
 
 export async function listContent(includeInactive = false): Promise<Content[]> {

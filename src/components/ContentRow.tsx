@@ -10,9 +10,10 @@ interface ContentRowProps {
   favorites?: Content[];
   onToggleFavorite?: (content: Content) => void;
   downloads?: Content[];
+  emptyDescription?: string;
 }
 
-const ContentRow: React.FC<ContentRowProps> = ({ title, items, onPlay, favorites = [], onToggleFavorite, downloads = [] }) => {
+const ContentRow: React.FC<ContentRowProps> = ({ title, items, onPlay, favorites = [], onToggleFavorite, downloads = [], emptyDescription }) => {
   const rowRef = useRef<HTMLDivElement>(null);
 
   const isFavorite = (id: string) => favorites.some(f => f.id === id);
@@ -26,11 +27,11 @@ const ContentRow: React.FC<ContentRowProps> = ({ title, items, onPlay, favorites
     }
   };
 
-  if (items.length === 0) return null;
+  if (items.length === 0 && !emptyDescription) return null;
 
   return (
     <div className="mb-8 sm:mb-12 group/row">
-      <h2 className="text-xl sm:text-2xl font-serif font-bold mb-4 px-4 sm:px-8 lg:px-12 flex items-center gap-2">
+      <h2 className="text-lg sm:text-xl font-bold mb-3 px-4 sm:px-8 lg:px-12 flex items-center gap-2 tracking-tight">
         {title}
         <span className="text-fiat-gold text-xs font-sans font-normal opacity-0 group-hover/row:opacity-100 transition-opacity cursor-pointer">Ver tudo &rsaquo;</span>
       </h2>
@@ -47,11 +48,18 @@ const ContentRow: React.FC<ContentRowProps> = ({ title, items, onPlay, favorites
           ref={rowRef}
           className="flex gap-2 sm:gap-4 overflow-x-auto scrollbar-hide px-4 sm:px-8 lg:px-12 pb-4 snap-x"
         >
-          {items.map((item) => (
+          {items.length === 0 ? (
+            <div className="catalog-placeholder flex-shrink-0 w-[82vw] sm:w-[520px] min-h-40 rounded-xl p-6 sm:p-8 flex flex-col justify-end snap-start">
+              <span className="text-fiat-gold text-[10px] font-bold uppercase tracking-[0.22em]">Em preparação</span>
+              <h3 className="text-xl sm:text-2xl font-bold mt-2">{title}</h3>
+              <p className="text-sm text-white/65 max-w-md mt-1">{emptyDescription}</p>
+            </div>
+          ) : items.map((item) => (
             <motion.div 
               key={item.id}
-              whileHover={{ scale: 1.05 }}
-              className="flex-shrink-0 w-40 sm:w-64 lg:w-72 aspect-video relative rounded-lg overflow-hidden cursor-pointer group/card snap-start bg-fiat-card border border-white/5"
+              whileHover={{ scale: 1.08, y: -8 }}
+              transition={{ type: 'spring', stiffness: 320, damping: 24 }}
+              className="stream-card flex-shrink-0 w-44 sm:w-64 lg:w-72 aspect-video relative rounded-md overflow-hidden cursor-pointer group/card snap-start bg-fiat-card border border-white/5"
               onClick={() => onPlay(item)}
             >
               <img 
@@ -67,7 +75,7 @@ const ContentRow: React.FC<ContentRowProps> = ({ title, items, onPlay, favorites
                 </div>
               )}
               
-              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/card:opacity-100 transition-opacity flex flex-col justify-end p-4">
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/45 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center text-black">
                     <Play className="w-4 h-4 fill-current" />
