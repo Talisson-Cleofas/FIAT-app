@@ -21,7 +21,7 @@ export default function Hero({ content, onPlay, favorites = [], onToggleFavorite
       {/* Background Image with Gradient */}
       <div className="absolute inset-0">
         <img 
-          src={content?.thumbnail || '/fiat-hero.png'}
+          src={content?.thumbnail || '/fiat-hero.jpg'}
           alt={content?.title || 'Bíblia aberta iluminada por uma luz dourada'}
           className="w-full h-full object-cover"
           referrerPolicy="no-referrer"
