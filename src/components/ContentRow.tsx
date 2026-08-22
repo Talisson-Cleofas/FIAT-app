@@ -15,8 +15,8 @@ interface ContentRowProps {
 const ContentRow: React.FC<ContentRowProps> = ({ title, items, onPlay, favorites = [], onToggleFavorite, downloads = [] }) => {
   const rowRef = useRef<HTMLDivElement>(null);
 
-  const isFavorite = (id: number) => favorites.some(f => f.id === id);
-  const isDownloaded = (id: number) => downloads.some(d => d.id === id);
+  const isFavorite = (id: string) => favorites.some(f => f.id === id);
+  const isDownloaded = (id: string) => downloads.some(d => d.id === id);
 
   const scroll = (direction: 'left' | 'right') => {
     if (rowRef.current) {

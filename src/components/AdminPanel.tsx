@@ -1,288 +1,72 @@
-import React, { useState, useEffect } from 'react';
-import { X, Plus, Edit2, Trash2, LayoutDashboard, Film, Users, CreditCard, Check, AlertCircle } from 'lucide-react';
-import { motion } from 'motion/react';
-import { Category, Content, AdminMetrics } from '../types';
+import { FormEvent, useEffect, useState } from 'react';
+import { Check, Edit2, Film, LayoutDashboard, Plus, Trash2, Users, X } from 'lucide-react';
+import { Category, Content, User } from '../types';
+import { listCategories, listContent, listUsers, removeContent, saveContent, setUserRole } from '../services/supabaseService';
 
-interface AdminPanelProps {
-  onClose: () => void;
-  token: string;
-}
+interface Props { onClose: () => void }
 
-export default function AdminPanel({ onClose, token }: AdminPanelProps) {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'content' | 'users' | 'plans'>('dashboard');
-  const [metrics, setMetrics] = useState<AdminMetrics | null>(null);
+const emptyContent: Partial<Content> = {
+  title: '', description: '', category_id: 'a-jornada', category_name: 'FIAT A Jornada',
+  thumbnail: '', video_url: '', audio_url: '', media_type: 'video', tags: '', is_active: true
+};
+
+export default function AdminPanel({ onClose }: Props) {
+  const [tab, setTab] = useState<'dashboard' | 'content' | 'users'>('dashboard');
   const [categories, setCategories] = useState<Category[]>([]);
-  const [contentList, setContentList] = useState<Content[]>([]);
-  const [isEditing, setIsEditing] = useState(false);
-  const [currentContent, setCurrentContent] = useState<Partial<Content>>({
-    title: '',
-    description: '',
-    category_id: 1,
-    thumbnail: '',
-    video_url: '',
-    audio_url: '',
-  });
+  const [items, setItems] = useState<Content[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [editing, setEditing] = useState(false);
+  const [form, setForm] = useState<Partial<Content>>(emptyContent);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
 
-  useEffect(() => {
-    fetchMetrics();
-    fetchCategories();
-    fetchContent();
-  }, []);
+  const load = async () => {
+    const [categoryItems, contentItems, userItems] = await Promise.all([listCategories(), listContent(true), listUsers()]);
+    setCategories(categoryItems); setItems(contentItems); setUsers(userItems);
+  };
+  useEffect(() => { load().catch(console.error); }, []);
 
-  const fetchMetrics = async () => {
-    const res = await fetch('/api/admin/metrics', { headers: { Authorization: `Bearer ${token}` } });
-    if (res.ok) setMetrics(await res.json());
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!form.video_url && !form.audio_url) return setMessage('Informe o link do vídeo ou do áudio.');
+    setSaving(true); setMessage('');
+    try {
+      await saveContent(form);
+      setEditing(false); setForm(emptyContent); setMessage('Conteúdo salvo com sucesso.'); await load();
+    } catch (error) { console.error(error); setMessage('Não foi possível salvar. Verifique suas permissões.'); }
+    finally { setSaving(false); }
   };
 
-  const fetchCategories = async () => {
-    const res = await fetch('/api/categories');
-    if (res.ok) setCategories(await res.json());
+  const pickCategory = (id: string) => {
+    const category = categories.find(item => item.id === id);
+    setForm(current => ({ ...current, category_id: id, category_name: category?.name || '' }));
   };
 
-  const fetchContent = async () => {
-    const res = await fetch('/api/content');
-    if (res.ok) setContentList(await res.json());
-  };
-
-  const handleSaveContent = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const method = currentContent.id ? 'PUT' : 'POST';
-    const url = currentContent.id ? `/api/admin/content/${currentContent.id}` : '/api/admin/content';
-    
-    const res = await fetch(url, {
-      method,
-      headers: { 
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}` 
-      },
-      body: JSON.stringify(currentContent)
-    });
-
-    if (res.ok) {
-      setIsEditing(false);
-      setCurrentContent({ title: '', description: '', category_id: 1, thumbnail: '', video_url: '', audio_url: '', tags: '' });
-      fetchContent();
-      fetchMetrics();
-    }
-  };
-
-  const handleDeleteContent = async (id: number) => {
-    if (confirm('Tem certeza que deseja excluir este conteúdo?')) {
-      const res = await fetch(`/api/admin/content/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) fetchContent();
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-[120] bg-fiat-bg flex flex-col">
-      {/* Header */}
-      <header className="h-16 border-b border-white/10 flex items-center justify-between px-6 bg-fiat-card">
-        <div className="flex items-center gap-4">
-          <div className="w-8 h-8 bg-fiat-blue rounded-full flex items-center justify-center border border-fiat-gold">
-            <span className="text-fiat-gold font-serif font-bold text-lg">F</span>
-          </div>
-          <h1 className="text-xl font-serif font-bold gold-text">Painel Administrativo</h1>
-        </div>
-        <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-full transition-colors">
-          <X className="w-6 h-6" />
-        </button>
-      </header>
-
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <aside className="w-64 border-r border-white/10 bg-fiat-card hidden md:block">
-          <nav className="p-4 space-y-2">
-            <button 
-              onClick={() => setActiveTab('dashboard')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'dashboard' ? 'bg-fiat-blue text-white' : 'hover:bg-white/5 text-gray-400'}`}
-            >
-              <LayoutDashboard className="w-5 h-5" /> Dashboard
-            </button>
-            <button 
-              onClick={() => setActiveTab('content')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'content' ? 'bg-fiat-blue text-white' : 'hover:bg-white/5 text-gray-400'}`}
-            >
-              <Film className="w-5 h-5" /> Conteúdos
-            </button>
-            <button 
-              onClick={() => setActiveTab('users')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'users' ? 'bg-fiat-blue text-white' : 'hover:bg-white/5 text-gray-400'}`}
-            >
-              <Users className="w-5 h-5" /> Usuários
-            </button>
-            <button 
-              onClick={() => setActiveTab('plans')}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${activeTab === 'plans' ? 'bg-fiat-blue text-white' : 'hover:bg-white/5 text-gray-400'}`}
-            >
-              <CreditCard className="w-5 h-5" /> Planos
-            </button>
-          </nav>
-        </aside>
-
-        {/* Main Content */}
-        <main className="flex-1 overflow-y-auto p-6 bg-fiat-bg">
-          {activeTab === 'dashboard' && (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-serif font-bold mb-6">Visão Geral</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                <div className="bg-fiat-card p-6 rounded-2xl border border-white/10">
-                  <p className="text-gray-400 text-sm font-medium uppercase tracking-wider mb-2">Total de Usuários</p>
-                  <p className="text-4xl font-bold">{metrics?.users || 0}</p>
-                </div>
-                <div className="bg-fiat-card p-6 rounded-2xl border border-white/10">
-                  <p className="text-gray-400 text-sm font-medium uppercase tracking-wider mb-2">Conteúdos Ativos</p>
-                  <p className="text-4xl font-bold">{metrics?.content || 0}</p>
-                </div>
-                <div className="bg-fiat-card p-6 rounded-2xl border border-white/10">
-                  <p className="text-gray-400 text-sm font-medium uppercase tracking-wider mb-2">Favoritos Totais</p>
-                  <p className="text-4xl font-bold">{metrics?.favorites || 0}</p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'content' && (
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-serif font-bold">Gerenciar Conteúdos</h2>
-                <button 
-                  onClick={() => { setIsEditing(true); setCurrentContent({ title: '', description: '', category_id: 1, thumbnail: '', video_url: '', audio_url: '' }); }}
-                  className="bg-fiat-blue hover:bg-blue-800 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
-                >
-                  <Plus className="w-5 h-5" /> Novo Conteúdo
-                </button>
-              </div>
-
-              {isEditing ? (
-                <motion.form 
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  onSubmit={handleSaveContent}
-                  className="bg-fiat-card p-8 rounded-2xl border border-white/10 space-y-4 max-w-3xl"
-                >
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="col-span-2">
-                      <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Título</label>
-                      <input 
-                        type="text" 
-                        required
-                        value={currentContent.title}
-                        onChange={e => setCurrentContent({...currentContent, title: e.target.value})}
-                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 outline-none focus:border-fiat-gold"
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Descrição</label>
-                      <textarea 
-                        rows={3}
-                        value={currentContent.description}
-                        onChange={e => setCurrentContent({...currentContent, description: e.target.value})}
-                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 outline-none focus:border-fiat-gold"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Categoria</label>
-                      <select 
-                        value={currentContent.category_id}
-                        onChange={e => setCurrentContent({...currentContent, category_id: parseInt(e.target.value)})}
-                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 outline-none focus:border-fiat-gold"
-                      >
-                        {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Thumbnail (URL)</label>
-                      <input 
-                        type="text" 
-                        value={currentContent.thumbnail}
-                        onChange={e => setCurrentContent({...currentContent, thumbnail: e.target.value})}
-                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 outline-none focus:border-fiat-gold"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Vídeo (URL)</label>
-                      <input 
-                        type="text" 
-                        value={currentContent.video_url}
-                        onChange={e => setCurrentContent({...currentContent, video_url: e.target.value})}
-                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 outline-none focus:border-fiat-gold"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Áudio (URL)</label>
-                      <input 
-                        type="text" 
-                        value={currentContent.audio_url}
-                        onChange={e => setCurrentContent({...currentContent, audio_url: e.target.value})}
-                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 outline-none focus:border-fiat-gold"
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="block text-xs font-bold text-gray-400 uppercase mb-1">Tags (separadas por vírgula)</label>
-                      <input 
-                        type="text" 
-                        placeholder="Ex: Bíblia, Oração, Jovens"
-                        value={currentContent.tags}
-                        onChange={e => setCurrentContent({...currentContent, tags: e.target.value})}
-                        className="w-full bg-white/5 border border-white/10 rounded-lg p-3 outline-none focus:border-fiat-gold"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex justify-end gap-4 mt-6">
-                    <button type="button" onClick={() => setIsEditing(false)} className="px-6 py-2 rounded-lg hover:bg-white/5">Cancelar</button>
-                    <button type="submit" className="bg-fiat-blue px-6 py-2 rounded-lg font-bold">Salvar Alterações</button>
-                  </div>
-                </motion.form>
-              ) : (
-                <div className="bg-fiat-card rounded-2xl border border-white/10 overflow-hidden">
-                  <table className="w-full text-left">
-                    <thead className="bg-white/5 border-b border-white/10">
-                      <tr>
-                        <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Conteúdo</th>
-                        <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Categoria</th>
-                        <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase">Status</th>
-                        <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase text-right">Ações</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/5">
-                      {contentList.map(item => (
-                        <tr key={item.id} className="hover:bg-white/5 transition-colors">
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                              <img src={item.thumbnail} className="w-16 aspect-video rounded object-cover" referrerPolicy="no-referrer" />
-                              <div>
-                                <p className="font-bold">{item.title}</p>
-                                <p className="text-xs text-gray-500 line-clamp-1">{item.description}</p>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className="text-sm text-fiat-gold">{item.category_name}</span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${item.is_active ? 'bg-emerald-500/20 text-emerald-500' : 'bg-fiat-red/20 text-fiat-red'}`}>
-                              {item.is_active ? 'Ativo' : 'Inativo'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <button onClick={() => { setIsEditing(true); setCurrentContent(item); }} className="p-2 hover:bg-white/10 rounded-lg transition-colors"><Edit2 className="w-4 h-4" /></button>
-                              <button onClick={() => handleDeleteContent(item.id)} className="p-2 hover:bg-white/10 rounded-lg transition-colors text-fiat-red"><Trash2 className="w-4 h-4" /></button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          )}
-        </main>
-      </div>
+  return <div className="fixed inset-0 z-[120] bg-fiat-bg flex flex-col">
+    <header className="h-16 border-b border-white/10 flex items-center justify-between px-6 bg-fiat-card"><h1 className="text-xl font-serif font-bold gold-text">Painel Administrativo</h1><button onClick={onClose}><X /></button></header>
+    <div className="flex flex-1 overflow-hidden">
+      <aside className="w-64 border-r border-white/10 bg-fiat-card hidden md:block p-4 space-y-2">
+        <button onClick={() => setTab('dashboard')} className={`admin-nav ${tab === 'dashboard' ? 'bg-fiat-blue text-white' : ''}`}><LayoutDashboard /> Dashboard</button>
+        <button onClick={() => setTab('content')} className={`admin-nav ${tab === 'content' ? 'bg-fiat-blue text-white' : ''}`}><Film /> Conteúdos</button>
+        <button onClick={() => setTab('users')} className={`admin-nav ${tab === 'users' ? 'bg-fiat-blue text-white' : ''}`}><Users /> Membros</button>
+      </aside>
+      <main className="flex-1 overflow-y-auto p-4 sm:p-8">
+        <div className="md:hidden flex gap-2 mb-6"><button onClick={() => setTab('dashboard')}>Resumo</button><button onClick={() => setTab('content')}>Conteúdos</button><button onClick={() => setTab('users')}>Membros</button></div>
+        {message && <p className="mb-4 rounded-xl border border-fiat-gold/30 bg-fiat-gold/10 p-3 text-sm">{message}</p>}
+        {tab === 'dashboard' && <><h2 className="text-3xl font-serif font-bold mb-8">Visão geral</h2><div className="grid sm:grid-cols-3 gap-5">{[['Membros', users.length], ['Conteúdos', items.length], ['Publicados', items.filter(item => item.is_active).length]].map(([label, value]) => <div key={String(label)} className="bg-fiat-card border border-white/10 rounded-2xl p-6"><p className="text-gray-400">{label}</p><p className="text-4xl font-bold gold-text mt-2">{value}</p></div>)}</div><div className="mt-8 bg-fiat-card border border-white/10 rounded-2xl p-6"><h3 className="font-bold mb-2">Mídia sem pesar no aplicativo</h3><p className="text-gray-400">Cadastre apenas links. Para vídeo, use YouTube não listado, Vimeo ou Cloudflare Stream. Para áudio, use Supabase Storage, Cloudinary ou Cloudflare R2 com URL pública.</p></div></>}
+        {tab === 'content' && <><div className="flex items-center justify-between mb-8"><h2 className="text-3xl font-serif font-bold">Conteúdos</h2><button onClick={() => { setForm(emptyContent); setEditing(true); }} className="bg-fiat-blue border border-fiat-gold/30 px-4 py-2 rounded-xl flex gap-2"><Plus /> Novo</button></div>
+          {editing ? <form onSubmit={submit} className="max-w-3xl bg-fiat-card border border-white/10 rounded-2xl p-6 space-y-4">
+            <div className="grid sm:grid-cols-2 gap-4"><label>Título<input required value={form.title || ''} onChange={e => setForm({ ...form, title: e.target.value })} className="admin-input" /></label><label>Categoria<select value={form.category_id} onChange={e => pickCategory(e.target.value)} className="admin-input">{categories.map(category => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label></div>
+            <label>Descrição<textarea required value={form.description || ''} onChange={e => setForm({ ...form, description: e.target.value })} className="admin-input min-h-28" /></label>
+            <label>Imagem de capa (URL)<input required type="url" value={form.thumbnail || ''} onChange={e => setForm({ ...form, thumbnail: e.target.value })} className="admin-input" placeholder="https://.../capa.jpg" /></label>
+            <div className="grid sm:grid-cols-2 gap-4"><label>Tipo<select value={form.media_type} onChange={e => setForm({ ...form, media_type: e.target.value as 'video' | 'audio' })} className="admin-input"><option value="video">Vídeo</option><option value="audio">Áudio</option></select></label><label>Tags<input value={form.tags || ''} onChange={e => setForm({ ...form, tags: e.target.value })} className="admin-input" /></label></div>
+            {form.media_type === 'video' ? <label>Link do vídeo<input required type="url" value={form.video_url || ''} onChange={e => setForm({ ...form, video_url: e.target.value, audio_url: '' })} className="admin-input" placeholder="YouTube não listado, Vimeo ou MP4 CDN" /></label> : <label>Link do áudio<input required type="url" value={form.audio_url || ''} onChange={e => setForm({ ...form, audio_url: e.target.value, video_url: '' })} className="admin-input" placeholder="MP3/AAC hospedado externamente" /></label>}
+            <label className="flex gap-2"><input type="checkbox" checked={form.is_active ?? true} onChange={e => setForm({ ...form, is_active: e.target.checked })} /> Publicado</label>
+            <div className="flex gap-3"><button disabled={saving} className="bg-fiat-blue px-5 py-3 rounded-xl flex gap-2"><Check /> {saving ? 'Salvando...' : 'Salvar'}</button><button type="button" onClick={() => setEditing(false)}>Cancelar</button></div>
+          </form> : <div className="space-y-3">{items.map(item => <div key={item.id} className="bg-fiat-card border border-white/10 rounded-xl p-4 flex items-center gap-4"><img src={item.thumbnail} className="w-28 aspect-video object-cover rounded-lg" /><div className="flex-1"><p className="font-bold">{item.title}</p><p className="text-xs text-gray-400">{item.category_name} · {item.media_type === 'audio' ? 'Áudio' : 'Vídeo'} · {item.is_active ? 'Publicado' : 'Rascunho'}</p></div><button onClick={() => { setForm(item); setEditing(true); }}><Edit2 /></button><button className="text-red-400" onClick={async () => { if (confirm('Excluir este conteúdo?')) { await removeContent(item.id); await load(); } }}><Trash2 /></button></div>)}</div>}
+        </>}
+        {tab === 'users' && <><h2 className="text-3xl font-serif font-bold mb-8">Membros</h2><div className="space-y-3">{users.map(member => <div key={member.id} className="bg-fiat-card border border-white/10 rounded-xl p-4 flex items-center justify-between gap-4"><div><p className="font-bold">{member.name}</p><p className="text-sm text-gray-400">{member.email}</p></div><select value={member.role} onChange={async e => { await setUserRole(member.id, e.target.value as User['role']); await load(); }} className="admin-input max-w-36"><option value="user">Membro</option><option value="admin">Administrador</option></select></div>)}</div></>}
+      </main>
     </div>
-  );
+  </div>;
 }

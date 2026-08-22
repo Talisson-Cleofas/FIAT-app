@@ -38,7 +38,7 @@ export const offlineService = {
     await db.put(STORE_NAME, offlineItem);
   },
 
-  async getContent(id: number): Promise<OfflineContent | undefined> {
+  async getContent(id: string): Promise<OfflineContent | undefined> {
     const db = await getDB();
     return db.get(STORE_NAME, id);
   },
@@ -48,12 +48,12 @@ export const offlineService = {
     return db.getAll(STORE_NAME);
   },
 
-  async deleteContent(id: number): Promise<void> {
+  async deleteContent(id: string): Promise<void> {
     const db = await getDB();
     await db.delete(STORE_NAME, id);
   },
 
-  async isDownloaded(id: number): Promise<boolean> {
+  async isDownloaded(id: string): Promise<boolean> {
     const db = await getDB();
     const item = await db.get(STORE_NAME, id);
     return !!item;
